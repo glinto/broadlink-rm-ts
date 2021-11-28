@@ -4,4 +4,4 @@ other libs listed in the "Thanks" section.
 
 ## Thanks
 - [https://github.com/lprhodes/broadlinkjs-rm] - for the original Javascript port
-- [https://github.com/mjg59/python-broadlink/] - for the broadlink
+- [https://github.com/mjg59/python-broadlink] - for the broadlink Python library

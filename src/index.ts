@@ -61,7 +61,7 @@ unsupportedDeviceTypes[0x947a] = 'BroadLink Outlet';
 
 export class Broadlink extends EventEmitter {
 
-	private devices: { [index: string]: Device };
+	private devices: { [index: string]: BroadlinkDevice };
 	private sockets: Socket[];
 
 	constructor() {
@@ -229,7 +229,7 @@ export class Broadlink extends EventEmitter {
 			return;
 		}
 
-		let device = new Device(host, mac, deviceType);
+		let device = new BroadlinkDevice(host, mac, deviceType);
 		this.devices[mac.toString('hex')] = device;
 
 		log(`Found ${device.model} at ${host.address}:${host.port}`);
@@ -243,7 +243,7 @@ export class Broadlink extends EventEmitter {
 	}
 
 	// Event overloads with typed listener signatures
-	on(event: 'deviceReady', listener: (device: Device) => void): this;
+	on(event: 'deviceReady', listener: (device: BroadlinkDevice) => void): this;
 	on(event: string | symbol, listener: (...args: any[]) => void): this;
 	on(event: string | symbol, listener: (...args: any[]) => void): this {
 		return super.on(event, listener);
@@ -251,7 +251,7 @@ export class Broadlink extends EventEmitter {
 }
 
 
-class Device extends EventEmitter {
+export class BroadlinkDevice extends EventEmitter {
 
 	readonly host: RemoteInfo;
 	readonly mac: Buffer;
@@ -517,7 +517,7 @@ class Device extends EventEmitter {
 	*/
 
 	// Event overloads with typed listener signatures
-	on(event: 'deviceReady', listener: (device: Device) => void): this;
+	on(event: 'deviceReady', listener: (device: BroadlinkDevice) => void): this;
 	on(event: 'temperature', listener: (temperature: number) => void): this;
 	on(event: string | symbol, listener: (...args: any[]) => void): this;
 	on(event: string | symbol, listener: (...args: any[]) => void): this {

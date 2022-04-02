@@ -6,7 +6,8 @@
   "types": "dist/index.d.ts",
   "scripts": {
     "prepack": "tsc",
-    "build": "tsc"
+    "build": "tsc",
+    "sweep": "tsc && node dist/examples/rfsweep.js"
   },
   "repository": {
     "type": "git",

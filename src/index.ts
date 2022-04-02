@@ -302,7 +302,10 @@ export class BroadlinkDevice extends EventEmitter {
 			response.copy(encryptedPayload, 0, 0x38);
 
 			let err = response[0x22] | (response[0x23] << 8);
-			if (err != 0) return;
+			if (err != 0) {
+				this.emit('data-error', err);
+				return;
+			};
 
 			let decipher = createDecipheriv('aes-128-cbc', this.key, this.iv);
 			decipher.setAutoPadding(false);

@@ -295,7 +295,7 @@ export class BroadlinkDevice extends EventEmitter {
 	/**
 	 * Start listening on the device socket
 	 */
-	listen() {
+	private listen() {
 
 		this.socket.on('message', (response) => {
 			let encryptedPayload = Buffer.alloc(response.length - 0x38, 0);
@@ -488,7 +488,7 @@ export class BroadlinkDevice extends EventEmitter {
 	}
 
 	cancelLearn() {
-		const packet = Buffer.alloc(16, 0);
+		let packet = Buffer.alloc(16, 0);
 		packet[0] = 0x1e;
 		this.sendPacket(0x6a, packet);
 	}

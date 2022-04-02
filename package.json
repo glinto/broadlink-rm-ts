@@ -1,6 +1,6 @@
 {
   "name": "broadlink-rm-ts",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "description": "A typescript library for interacting with Broadlink universal remote controllers",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",

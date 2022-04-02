@@ -250,6 +250,9 @@ export class Broadlink extends EventEmitter {
 	}
 }
 
+export enum DeviceCapabilites {
+	RF = 'RF'
+}
 
 export class BroadlinkDevice extends EventEmitter {
 
@@ -264,6 +267,7 @@ export class BroadlinkDevice extends EventEmitter {
 	iv: Buffer;
 	id: Buffer;
 
+	readonly capabilites: { [key in DeviceCapabilites]: boolean };
 
 	constructor(host: RemoteInfo, mac: Buffer, type: number) {
 		super();
@@ -282,9 +286,9 @@ export class BroadlinkDevice extends EventEmitter {
 
 		this.listen();
 
-
-		//const isRFSupported = rmPlusDeviceTypes[type];
-		//if (isRFSupported) this.addRFSupport();
+		this.capabilites = {
+			[DeviceCapabilites.RF]: rmPlusDeviceTypes[type] !== undefined
+		};
 	}
 
 

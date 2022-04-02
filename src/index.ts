@@ -263,6 +263,9 @@ export class BroadlinkDevice extends EventEmitter {
 	readonly socket: Socket;
 	count: number;
 
+	private sweepHandler?: Promise<void>;
+	private confirmHandler?: Promise<Buffer>;
+
 	key: Buffer;
 	iv: Buffer;
 	id: Buffer;
@@ -493,33 +496,135 @@ export class BroadlinkDevice extends EventEmitter {
 		this.sendPacket(0x6a, packet);
 	}
 
-	/*
-	addRFSupport() {
-		this.enterRFSweep = () => {
-			const packet = Buffer.alloc(16, 0);
-			packet[0] = 0x19;
-			this.sendPacket(0x6a, packet);
-		}
 
-		this.cancelRFSweep = () => {
-			const packet = Buffer.alloc(16, 0);
-			packet[0] = 0x1e;
-			this.sendPacket(0x6a, packet);
-		}
-	
-		this.checkRFData = () => {
-			const packet = Buffer.alloc(16, 0);
-			packet[0] = 0x1a;
-			this.sendPacket(0x6a, packet);
-		}
-	
-		this.checkRFData2 = () => {
-			const packet = Buffer.alloc(16, 0);
-			packet[0] = 0x1b;
-			this.sendPacket(0x6a, packet);
-		}
+	/**
+	 * High level, asynchronous RF sweep. During RF sweep you have 10 seconds to long press the button 
+	 * which the RM device needs to learn. If the sweep is successful, you can call the high level function
+	 * confirmFrequency() to get the learnt RF data for the button.
+	 * 
+	 * @returns A promise, which resolves if the RF sweep was successful. IF the sweep was not successful,
+	 * or the sweep does not yield any result within the allowed timeout, the promise rejects.
+	 */
+	sweepFrequency(): Promise<void> {
+		if (this.sweepHandler !== undefined)
+			return this.sweepHandler;
+		this.sweepHandler = new Promise<void>((resolve, reject) => {
+
+			// Make sure we wrap up if sweep does not do anything
+			let sweepTimeout = setTimeout(() => {
+				this.cancelRFSweep();
+				this.sweepHandler = undefined;
+				reject('RF sweep did not return any result');
+			}, 30000);
+			// In 10 seconds we will send a command to check if sweep was successful
+			setTimeout(() => {
+				this.checkRFSweep();
+			}, 10000);
+			this.on('sweep', (success) => {
+				clearTimeout(sweepTimeout);
+				this.sweepHandler = undefined;
+				if (!success) {
+					reject('The RF sweep was not successful')
+				}
+				else {
+					resolve();
+				}
+			});
+
+			this.enterRFSweep();
+		});
+
+		return this.sweepHandler;
 	}
-	*/
+
+	/**
+	 * High level, asynchronous method to confirm the RF data for the button which the device need to learn.
+	 * This method must be called after a previous sweepFrequency() call resolved successfully.
+	 * 
+	 * Calling this method will put the device in listening mode again, during which time you must short press
+	 * the same button as the one you used in sweepFrequency()
+	 * 
+	 * @returns A promise, which resolves to a buffer of the isolated button data
+	 */
+	confirmFrequency(): Promise<Buffer> {
+		if (this.confirmHandler !== undefined)
+			return this.confirmHandler;
+		this.confirmHandler = new Promise<Buffer>((resolve, reject) => {
+			let dataTimeout = setTimeout(() => {
+				this.confirmHandler = undefined;
+				reject('Did not get RF data from device');
+			}, 10000);
+			setTimeout(() => {
+				this.checkData();
+			}, 5000);
+			this.on('data', (buf) => {
+				clearTimeout(dataTimeout);
+				this.confirmHandler = undefined;
+				resolve(buf);
+			});
+			this.findRFPacket();
+		});
+		return this.confirmHandler;
+	}
+
+	/** 
+	 * Enter RF sweep mode. While in RF sweep mode, you must
+	 * long press the button you want the device to learn. This mode is also indicated on the RM unit with a 
+	 * red or blinking LED.
+	 */
+	enterRFSweep() {
+		if (!this.capabilites[DeviceCapabilites.RF]) {
+			log('This device does not have RF capabilities');
+			return;
+		}
+		log('When the LED indicator is on, long press the button on the remote');
+		let packet = Buffer.alloc(16, 0);
+		packet[0] = 0x19;
+		this.sendPacket(0x6a, packet);
+	}
+
+	/**
+	 * Cancels an ongoing RF sweep mode.
+	 */
+	cancelRFSweep() {
+		if (!this.capabilites[DeviceCapabilites.RF]) {
+			log('This device does not have RF capabilities');
+			return;
+		}
+		let packet = Buffer.alloc(16, 0);
+		packet[0] = 0x1e;
+		this.sendPacket(0x6a, packet);
+	}
+
+	/**
+	 * Check if an RF packet can be isolated form the RF sweep results. This puts the device in listening mode,
+	 * during which time you must short press the button again.
+	 * 
+	 * After the short press, you must call checkData() to check for the captured RF data	 
+	 */
+	findRFPacket() {
+		if (!this.capabilites[DeviceCapabilites.RF]) {
+			log('This device does not have RF capabilities');
+			return;
+		}
+		log('Now, short press the same button');
+		let packet = Buffer.alloc(16, 0);
+		packet[0] = 0x1b;
+		this.sendPacket(0x6a, packet);
+	}
+
+	/**
+	 * Check if the previous RF sweep was successful. You must attach a listener to 'sweep' event to get the results.
+	 */
+	checkRFSweep() {
+		if (!this.capabilites[DeviceCapabilites.RF]) {
+			log('This device does not have RF capabilities');
+			return;
+		}
+		let packet = Buffer.alloc(16, 0);
+		packet[0] = 0x1a;
+		this.sendPacket(0x6a, packet);
+	}
 
 	// Event overloads with typed listener signatures
 	on(event: 'deviceReady', listener: (device: BroadlinkDevice) => void): this;

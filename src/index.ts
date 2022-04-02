@@ -428,7 +428,7 @@ export class BroadlinkDevice extends EventEmitter {
 		});
 	}
 
-	onPayloadReceived(err: number, payload: Buffer) {
+	private onPayloadReceived(err: number, payload: Buffer) {
 		let param = payload[0];
 
 		let data = Buffer.alloc(payload.length - 4, 0);
@@ -443,21 +443,19 @@ export class BroadlinkDevice extends EventEmitter {
 			case 4: { //get from check_data
 				let data = Buffer.alloc(payload.length - 4, 0);
 				payload.copy(data, 0, 4);
-				this.emit('rawData', data);
+				this.emit('data', data);
 				break;
 			}
 			case 26: { //get from check_data
 				let data = Buffer.alloc(1, 0);
 				payload.copy(data, 0, 0x4);
-				if (data[0] !== 0x1) break;
-				this.emit('rawRFData', data);
+				this.emit('sweep', data[0] === 1);
 				break;
 			}
 			case 27: { //get from check_data
 				let data = Buffer.alloc(1, 0);
 				payload.copy(data, 0, 0x4);
-				if (data[0] !== 0x1) break;
-				this.emit('rawRFData2', data);
+				this.emit('rf-data', data);
 				break;
 			}
 		}
@@ -526,6 +524,9 @@ export class BroadlinkDevice extends EventEmitter {
 	// Event overloads with typed listener signatures
 	on(event: 'deviceReady', listener: (device: BroadlinkDevice) => void): this;
 	on(event: 'temperature', listener: (temperature: number) => void): this;
+	on(event: 'data', listener: (data: Buffer) => void): this;
+	on(event: 'sweep', listener: (success: boolean) => void): this;
+	on(event: 'rf-data', listener: (data: Buffer) => void): this;
 	on(event: string | symbol, listener: (...args: any[]) => void): this;
 	on(event: string | symbol, listener: (...args: any[]) => void): this {
 		return super.on(event, listener);

@@ -2,9 +2,18 @@
 A typescript library for interacting with Broadlink universal remote devices. This library is large based on (ported from)
 other libs listed in the "Thanks" section.
 
+## Installation
+
+You can obtain the package from npm.
+
+```
+$ npm install broadlink-rm-ts
+```
+
 ## Setting up a Broadlink device
 
 ```typescript
+import { Broadlink } from "broadlink-rm-ts";
 let broadlink = new Broadlink();
 
 broadlink.on('deviceReady', (device) => {
